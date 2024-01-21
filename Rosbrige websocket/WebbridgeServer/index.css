@@ -1,0 +1,49 @@
+.scrolling-container {
+    width: 500px;
+    height: 300px;
+    overflow-y: auto; 
+    border: 1px solid #ccc;
+    padding: 5px; 
+}
+
+.default-size {
+    width: 800px;
+    height: 300px;
+}
+
+.control-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.control-button {
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+}
+
+.control-button:hover {
+    background-color: #2980b9;
+}
+
+.up {
+    grid-column: 2;
+}
+
+.down {
+    grid-column: 2;
+}
+
+.left {
+    grid-column: 1;
+}
+
+.right {
+    grid-column: 3;
+}

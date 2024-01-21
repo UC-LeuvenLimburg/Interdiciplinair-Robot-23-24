@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+
+    <!--ROS source-->
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/roslibjs/1.1.0/roslib.min.js"></script>
+
+    <!--bootstrap source-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <!-- vue source -->
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="index.css">
+
+    <title>Websocket</title>
+
+</head>
+
+<body>
+    <div id="app" class="container">
+        <div class="row border">
+            <div class="col-md-2 border">
+                <label for="wsAddress">Select WS Address:</label>
+                <select v-model="selectedAddress" class="form-control" @change="changeWsAddress()">
+                    <option value="ws://localhost:9090">Localhost</option>
+                    <option value="ws://192.168.1.48:9090">Rosbridge</option>
+                </select>
+                <!-- <button v-on:click="connect()" type="button" class="btn btn-success">Connect to server!</button> -->
+                <h3>Status:</h3>
+                <h4 style="color: green;" id="connectStatus"></h4>
+            </div>
+        </div>
+        <div class="row border">
+            <div class="col text-center border">
+                <button v-on:click="ledAan()" :disabled="!connected" class="btn btn-primary">Led aan</button>
+                <br><br>
+                <button v-on:click="ledUit()" :disabled="!connected" class="btn btn-primary">Led uit</button>
+            </div>
+            <div class="col text-center">
+                <label for="x">X:</label>
+                <input v-model="x" type="text" id="x" name="x" placeholder="Enter X">
+                <br>
+                <label for="y">Y:</label>
+                <input v-model="y" type="text" id="y" name="y" placeholder="Enter Y">
+                <br>
+                <label for="z">Z:</label>
+                <input v-model="z" type="text" id="z" name="z" placeholder="Enter Z">
+                <br>
+                <button v-on:click="sendValue()" :disabled="!connected" class="btn btn-primary">Send Values</button>
+                <br><br>
+            </div>
+        </div>
+        <div class="row border">
+            <div class="col">
+                <h3>Publish log:</h3>
+                <p id="publishLog" class="scrolling-container"></p>
+            </div>
+            <div class="col border">
+                <h3>Receive Log</h3>
+                <label for="topic">Select Topic:</label>
+                <select v-model="selectedTopic" class="form-control" @click="fetchTopics" @change="subscribeToTopic">
+                    <option v-for="topic in availableTopics" :key="topic" :value="topic">{{ topic }}</option>
+                </select>
+                <button @click="clearReceivedMessages" class="btn btn-danger">Clear Messages</button>
+                <p id="recieveLog" class="scrolling-container">
+                    <span v-for="(message, index) in receivedMessages" :key="index">
+                        {{ message }}<br>
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="row border default-size">
+            <div class="col border">
+                <h3>Camera</h3>
+                <div v-if="!connected">
+                    <p>Connect to the server first to se camera images</p>
+                </div>
+                <div v-else-if="availableTopics.includes(cameraTopicName)">
+                    <img src="data:image/jpeg;base64" id="myimage" />
+                </div>
+                <div v-else>
+                    <p>No data published</p>
+                </div>                
+            </div>
+            <div class="col border">
+                <h3>Battery Level</h3>
+                <div v-if="!connected">
+                    <p>Connect to the server first to see batterylevels</p>
+                </div>
+                <div v-else-if="availableTopics.includes(batteryTopicName)">
+                    <p><span id="BatteryLevel">{{ batteryLevel }}%</span></p>
+                </div>
+                <div v-else>
+                    <p>No data published</p>
+                </div>
+            </div>    
+            <div class="col border">
+                <h3>Manual Control</h3>
+                <div v-if="!connected">
+                    <p>Connect to the server first to use the controls</p>
+                </div>
+                <div v-else></div>
+                    <div class="control-container">
+                        <button class="control-button up" @mousedown="buttonClicked('up')" @mouseup="buttonReleased('up')">Up</button>
+                        <button class="control-button left" @mousedown="buttonClicked('left')" @mouseup="buttonReleased('left')">Left</button>
+                        <button class="control-button right" @mousedown="buttonClicked('right')" @mouseup="buttonReleased('right')">Right</button>
+                        <button class="control-button down" @mousedown="buttonClicked('down')" @mouseup="buttonReleased('down')">Down</button>
+                    </div>
+                </div>
+                <!--
+                
+                <div v-else-if="availableTopics.includes(batteryTopicName)">
+                    <p><span id="BatteryLevel">{{ batteryLevel }}%</span></p>
+                </div>
+                <div v-else>
+                    <p>No data published</p>
+                </div>
+                -->
+
+            </div>          
+        </div>
+    </div>
+
+    <!--bootstrap source-->
+    <!-- JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="index.js"></script>
+</body>
+
+</html>
